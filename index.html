@@ -9,103 +9,119 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Changa:wght@300;500;700&display=swap');
-        body { font-family: 'Changa', sans-serif; }
-        .hadith-font { font-family: 'Amiri', serif; }
-        select { background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; padding: 3px; width: 90%; outline: none; transition: all 0.2s; }
-        select.active { background-color: #dcfce7; border-color: #22c55e; }
-        .prayer-row { background-color: #fdfdfd; }
+        @import url('https://fonts.googleapis.com/css2?family=Changa:wght@400;700&display=swap');
+        body { font-family: 'Changa', sans-serif; background: #e0e5ec; }
+        /* تصميم مجسم للأزرار والصناديق */
+        .glass-card { background: #f8fafc; border-radius: 20px; box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff; }
+        .3d-btn { box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; transition: all 0.2s; }
+        .3d-btn:active { box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff; }
+        select { background: #f1f5f9; border: none; box-shadow: inset 2px 2px 5px #bebebe, inset -2px -2px 5px #ffffff; border-radius: 8px; padding: 4px; font-size: 11px; outline: none; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="p-2 md:p-6">
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
+
+        // رابط قاعدة البيانات السحابية (مشترك للجميع)
+        const REMOTE_URL = "https://api.myjson.online/v1/records/0b457317-1f1f-4903-8886-3f196a096c41";
 
         const AHADITH = [
             "قال ﷺ: 'أحبُّ الأعمالِ إلى اللهِ أدومُها وإن قلَّ'.",
             "قال ﷺ: 'مَن سلكَ طريقًا يبتغي فيهِ علمًا سهَّلَ اللهُ لهُ طريقًا إلى الجنَّةِ'.",
             "قال ﷺ: 'الدَّالُّ على الخيرِ كفاعلِهِ'.",
-            "قال ﷺ: 'كلمتانِ خفيفتانِ على اللِّسانِ ثقيلتانِ في الميزانِ: سبحان الله وبحمده سبحان الله العظيم'.",
-            "قال ﷺ: 'مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللهُ عَلَيْهِ بِهَا عَشْرًا'.",
-            "قال ﷺ: 'الصَّلَواتُ الخَمْسُ، والجمُعةُ إلى الجُمُعةِ.. مُكفِّراتٌ لِما بينَهُنَّ'.",
-            "قال ﷺ: 'مَنْ قَرَأَ حَرْفًا مِنْ كِتَابِ اللَّهِ فَلَهُ بِهِ حَسَنَةٌ'.",
-            "قال ﷺ: 'إِنَّ اللَّهَ يُحِبُّ إِذَا عَمِلَ أَحَدُكُمْ عَمَلًا أَنْ يُتْقِنَهُ'."
+            "قال ﷺ: 'كلمتانِ خفيفتانِ على اللِّسانِ ثقيلتانِ في الميزانِ: سبحان الله وبحمده سبحان الله العظيم'."
         ];
 
         function App() {
             const users = ['محمد', 'شيماء', 'أحمد', 'ياسين'];
             const men = ['محمد', 'أحمد', 'ياسين'];
-            const getToday = () => new Date().toISOString().split('T')[0];
-            const [date, setDate] = useState(getToday());
-            const [data, setData] = useState(() => JSON.parse(localStorage.getItem('family_v6_db') || '{}'));
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [data, setData] = useState({});
+            const [loading, setLoading] = useState(true);
 
+            // جلب البيانات من الإنترنت فوراً وتحديثها كل 15 ثانية للمزامنة
             useEffect(() => {
-                localStorage.setItem('family_v6_db', JSON.stringify(data));
-            }, [data]);
+                const sync = async () => {
+                    try {
+                        const res = await fetch(REMOTE_URL);
+                        const json = await res.json();
+                        if (json.data) setData(json.data);
+                        setLoading(false);
+                    } catch (e) { console.log("خطأ في المزامنة"); }
+                };
+                sync();
+                const interval = setInterval(sync, 15000); 
+                return () => clearInterval(interval);
+            }, []);
+
+            const updateCloud = async (newData) => {
+                setData(newData);
+                try {
+                    await fetch(REMOTE_URL, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: newData })
+                    });
+                } catch (e) { alert("تأكد من اتصالك بالإنترنت!"); }
+            };
 
             const isFriday = new Date(date).getDay() === 5;
             const prayers = ["صلاة الفجر", isFriday ? "صلاة الجمعة" : "صلاة الظهر", "صلاة العصر", "صلاة المغرب", "صلاة العشاء"];
             const others = ["سنة الفجر", "أذكار الصباح", "الضحى", "سورة الكهف", "٤ قبل الظهر", "٢ بعد الظهر", "أذكار المساء", "٢ بعد المغرب", "٢ بعد العشاء", "سورة الملك", "الشفع والوتر", "القيام", "الورد", "أذكار النوم"]
                             .filter(i => isFriday || i !== "سورة الكهف");
 
-            const updateValue = (u, t, val) => {
+            const toggle = (u, t, val) => {
                 const newData = { ...data };
                 if (!newData[date]) newData[date] = {};
                 if (!newData[date][u]) newData[date][u] = {};
                 newData[date][u][t] = val;
-                setData(newData);
+                updateCloud(newData);
             };
 
-            const calculateScores = () => {
-                return users.map(u => {
-                    const tasks = data[date]?.[u] || {};
-                    let score = Object.values(tasks).filter(v => v === true || (typeof v === 'string' && v !== "")).length;
-                    return { name: u, score };
-                }).sort((a, b) => b.score - a.score);
-            };
-
-            const scores = calculateScores();
-            const topScorer = scores[0];
-            const dailyHadith = AHADITH[new Date(date).getDate() % AHADITH.length];
+            const scores = users.map(u => {
+                const tasks = data[date]?.[u] || {};
+                const count = Object.values(tasks).filter(v => v === true || (typeof v === 'string' && v !== "")).length;
+                return { name: u, count };
+            }).sort((a, b) => b.count - a.count);
 
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl border-x flex flex-col">
-                    <header className="bg-emerald-700 p-6 text-white text-center shadow-lg rounded-b-3xl">
-                        <h1 className="text-2xl font-bold tracking-wide">🏠 أسرتي على الطاعة</h1>
+                <div className="max-w-md mx-auto flex flex-col gap-4">
+                    {/* رأس التطبيق مجسم */}
+                    <div className="glass-card p-6 text-center border-b-4 border-emerald-500">
+                        <h1 className="text-2xl font-bold text-emerald-800 mb-2">🏠 أسرتي على الطاعة</h1>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} 
-                               className="mt-4 w-full p-2 text-emerald-900 rounded-xl font-bold text-center outline-none" />
-                    </header>
-
-                    {/* حديث اليوم */}
-                    <div className="m-4 p-4 bg-amber-50 border-r-4 border-amber-400 rounded-lg shadow-sm">
-                        <h3 className="text-amber-800 text-xs font-bold mb-1">✨ حديث اليوم:</h3>
-                        <p className="hadith-font text-sm leading-relaxed text-gray-800">{dailyHadith}</p>
+                               className="w-full p-2 rounded-lg font-bold text-center border bg-white shadow-inner" />
+                        {loading && <p className="text-[10px] text-orange-500 mt-2 animate-pulse">جاري جلب البيانات السحابية...</p>}
                     </div>
 
-                    <div className="flex-grow">
+                    {/* حديث اليوم */}
+                    <div className="glass-card p-4 mx-2 bg-gradient-to-r from-amber-50 to-white">
+                        <p className="text-xs font-bold text-amber-600 mb-1">✨ حديث اليوم</p>
+                        <p className="text-sm italic text-gray-700 leading-relaxed">
+                            {AHADITH[new Date(date).getDate() % AHADITH.length]}
+                        </p>
+                    </div>
+
+                    {/* الجدول */}
+                    <div className="glass-card overflow-hidden mx-2">
                         <table className="w-full text-right">
-                            <thead>
-                                <tr className="bg-gray-100 text-[10px] text-gray-500 uppercase">
+                            <thead className="bg-emerald-600 text-white text-[10px]">
+                                <tr>
                                     <th className="p-3">العبادة</th>
                                     {users.map(u => <th key={u} className="text-center">{u}</th>)}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="text-sm">
                                 {prayers.map(p => (
-                                    <tr key={p} className="border-b prayer-row">
-                                        <td className="p-3 text-sm font-bold text-emerald-800">{p}</td>
+                                    <tr key={p} className="border-b">
+                                        <td className="p-3 font-bold text-emerald-900">{p}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
                                                 <select value={data[date]?.[u]?.[p] || ""} 
-                                                        className={data[date]?.[u]?.[p] ? "active" : ""}
-                                                        onChange={(e) => updateValue(u, p, e.target.value)}>
+                                                        onChange={(e) => toggle(u, p, e.target.value)}>
                                                     <option value="">--</option>
-                                                    {men.includes(u) ? (
-                                                        <><option value="مسجد">مسجد</option><option value="فرداً">فرداً</option></>
-                                                    ) : (
-                                                        <option value="حاضر">حاضر</option>
-                                                    )}
+                                                    {men.includes(u) ? <><option value="مسجد">مسجد</option><option value="فرداً">فرداً</option></> : <option value="حاضر">حاضر</option>}
                                                     <option value="قضاء">قضاء</option>
                                                 </select>
                                             </td>
@@ -113,11 +129,12 @@
                                     </tr>
                                 ))}
                                 {others.map(t => (
-                                    <tr key={t} className="border-b hover:bg-emerald-50/30">
-                                        <td className="p-3 text-xs text-gray-600">{t}</td>
+                                    <tr key={t} className="border-b">
+                                        <td className="p-3 text-xs text-gray-500">{t}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
-                                                <button onClick={() => updateValue(u, t, !data[date]?.[u]?.[t])} className="text-2xl">
+                                                <button onClick={() => toggle(u, t, !data[date]?.[u]?.[t])} 
+                                                        className="text-2xl 3d-btn rounded-full w-8 h-8">
                                                     {data[date]?.[u]?.[t] ? "✅" : "⚪"}
                                                 </button>
                                             </td>
@@ -128,30 +145,28 @@
                         </table>
                     </div>
 
-                    {/* لوحة الشرف */}
-                    <div className="m-4 p-4 bg-gray-50 rounded-2xl border-2 border-emerald-100 shadow-inner">
-                        <h2 className="text-center font-bold text-emerald-800 mb-3 flex items-center justify-center gap-2">
-                            🏆 لوحة شرف اليوم
-                        </h2>
-                        <div className="grid grid-cols-2 gap-2">
+                    {/* لوحة الشرف المجسمة */}
+                    <div className="glass-card p-4 mx-2 border-t-4 border-yellow-400">
+                        <h2 className="text-center font-bold text-gray-800 mb-3">🏆 لوحة الشرف اليومية</h2>
+                        <div className="grid grid-cols-2 gap-3">
                             {scores.map((s, idx) => (
-                                <div key={s.name} className={`p-2 rounded-lg flex justify-between items-center ${idx === 0 ? 'bg-yellow-100 border border-yellow-300' : 'bg-white border border-gray-100'}`}>
-                                    <span className="text-xs font-bold">{idx + 1}. {s.name}</span>
-                                    <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full">{s.score}</span>
+                                <div key={s.name} className={`p-3 rounded-xl 3d-btn flex justify-between items-center ${idx === 0 ? 'bg-yellow-50' : 'bg-white'}`}>
+                                    <span className="font-bold text-xs">{idx+1}. {s.name}</span>
+                                    <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">{s.count}</span>
                                 </div>
                             ))}
                         </div>
-                        {topScorer.score > 0 && (
-                            <div className="mt-3 text-center p-2 bg-emerald-600 rounded-xl animate-pulse">
-                                <p className="text-white text-xs font-bold italic">
-                                    "هنيئاً لك يا {topScorer.name}.. أنت اليوم شمس الأسرة المنيرة! 🌟"
+                        {scores[0].count > 0 && (
+                            <div className="mt-4 p-3 bg-emerald-700 text-white rounded-xl text-center shadow-lg transform scale-105">
+                                <p className="text-xs font-bold animate-bounce">
+                                    🌟 أحسنت يا {scores[0].name}.. أنت فخر الأسرة اليوم! 🌟
                                 </p>
                             </div>
                         )}
                     </div>
 
                     <footer className="p-6 text-center">
-                        <div className="inline-block px-8 py-2 bg-emerald-800 text-white rounded-full shadow-lg font-bold text-xs uppercase tracking-widest">
+                        <div className="inline-block px-10 py-3 glass-card bg-emerald-800 text-white font-bold text-xs shadow-xl ring-2 ring-emerald-500">
                             تصميم محمد ياسين
                         </div>
                     </footer>
