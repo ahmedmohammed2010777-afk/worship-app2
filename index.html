@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متابعة العبادات العائلية</title>
+    <title>متابعة العبادات العائلية المشتركة</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,55 +14,49 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // قائمة النصائح والأحاديث
-        const dailyTips = [
-            "قال ﷺ: 'أحب الأعمال إلى الله أدومها وإن قل'.",
-            "نصيحة: اجعل لنفسك خبيئة من عمل صالح لا يعلمها إلا الله.",
-            "قال ﷺ: 'من سلك طريقًا يلتمس فيه علمًا سهل الله له به طريقًا إلى الجنة'.",
-            "نصيحة: الصلاة على النبي ﷺ تفتح الأبواب المغلقة.",
-            "قال ﷺ: 'الدال على الخير كفاعله'.",
-            "قال ﷺ: 'كلمتان خفيفتان على اللسان، ثقيلتان في الميزان: سبحان الله وبحمده، سبحان الله العظيم'.",
-            "نصيحة: سورة الملك هي المنجية من عذاب القبر، حافظ عليها قبل نومك."
-        ];
+        // الرابط السحابي (هذا المخزن مشترك للجميع)
+        const DB_URL = "https://api.jsonbin.io/v3/b/65ae36f1dc74654018979607"; 
+        const API_KEY = "$2a$10$X8A2V7p6lU6LhF3X3.J3AeX0yG7L2fP5C2uR7O5G8o7U6i5Y4z5C"; // تجريبي
 
         function App() {
             const users = ['محمد', 'شيماء', 'أحمد', 'ياسين'];
             const getTodayStr = () => new Date().toISOString().split('T')[0];
             const [selectedDate, setSelectedDate] = useState(getTodayStr());
-            const [data, setData] = useState(() => JSON.parse(localStorage.getItem('worship_final_db') || '{}'));
+            const [data, setData] = useState({});
+            const [loading, setLoading] = useState(true);
 
+            // 1. جلب البيانات من الإنترنت عند فتح التطبيق
             useEffect(() => {
-                localStorage.setItem('worship_final_db', JSON.stringify(data));
-            }, [data]);
+                fetchData();
+                // تحديث تلقائي كل 30 ثانية لرؤية تغييرات الآخرين
+                const interval = setInterval(fetchData, 30000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const fetchData = async () => {
+                try {
+                    const res = await fetch('https://api.myjson.online/v1/records/063f972b-8716-436d-9781-9b63a9484b3d');
+                    const json = await res.json();
+                    setData(json.data || {});
+                    setLoading(false);
+                } catch (e) { console.error("خطأ في الجلب"); setLoading(false); }
+            };
+
+            // 2. حفظ البيانات على الإنترنت فور التغيير
+            const saveData = async (newData) => {
+                try {
+                    await fetch('https://api.myjson.online/v1/records/063f972b-8716-436d-9781-9b63a9484b3d', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data: newData })
+                    });
+                } catch (e) { alert("فشل الاتصال بالإنترنت!"); }
+            };
 
             const isFriday = new Date(selectedDate).getDay() === 5;
-
-            // بناء قائمة العبادات بناءً على طلبك
             const tasks = useMemo(() => {
-                let t = [
-                    "سنة الفجر", 
-                    "صلاة الفجر", 
-                    "أذكار الصباح", 
-                    "الضحى",
-                    "٤ ركعات قبل الظهر", 
-                    isFriday ? "صلاة الجمعة" : "صلاة الظهر", 
-                    "ركعتان بعد الظهر",
-                    "صلاة العصر", 
-                    "أذكار المساء", 
-                    "صلاة المغرب", 
-                    "ركعتان بعد المغرب",
-                    "صلاة العشاء", 
-                    "ركعتان بعد العشاء", 
-                    "سورة الملك", 
-                    "الشفع والوتر", 
-                    "القيام", 
-                    "الورد القرآني", 
-                    "أذكار النوم"
-                ];
-                // إضافة سورة الكهف يوم الجمعة فقط
-                if (isFriday) {
-                    t.splice(4, 0, "سورة الكهف 📖");
-                }
+                let t = ["سنة الفجر", "صلاة الفجر", "أذكار الصباح", "الضحى", "٤ ركعات قبل الظهر", isFriday ? "صلاة الجمعة" : "صلاة الظهر", "ركعتان بعد الظهر", "صلاة العصر", "أذكار المساء", "صلاة المغرب", "ركعتان بعد المغرب", "صلاة العشاء", "ركعتان بعد العشاء", "سورة الملك", "الشفع والوتر", "القيام", "الورد القرآني", "أذكار النوم"];
+                if (isFriday) t.splice(4, 0, "سورة الكهف 📖");
                 return t;
             }, [isFriday]);
 
@@ -72,52 +66,37 @@
                 if (!newData[selectedDate][user]) newData[selectedDate][user] = {};
                 newData[selectedDate][user][task] = !newData[selectedDate][user][task];
                 setData(newData);
+                saveData(newData); // رفع التغيير فوراً
             };
 
-            // حساب الإنجازات للترتيب
             const scores = users.map(user => {
                 const completed = data[selectedDate]?.[user] ? Object.values(data[selectedDate][user]).filter(Boolean).length : 0;
                 return { name: user, count: completed };
             }).sort((a, b) => b.count - a.count);
 
-            const todayTip = dailyTips[new Date(selectedDate).getDate() % dailyTips.length];
-
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col pb-10 border-x border-slate-200">
-                    {/* رأس الصفحة */}
-                    <div className={`${isFriday ? 'bg-emerald-700' : 'bg-blue-700'} p-5 text-white shadow-lg`}>
-                        <h1 className="text-xl font-bold text-center mb-4">حصاد العبادات العائلي</h1>
-                        <div className="bg-white/10 p-3 rounded-xl">
-                            <input 
-                                type="date" 
-                                value={selectedDate} 
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="w-full text-slate-900 p-2 rounded font-bold"
-                            />
-                        </div>
+                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col pb-10">
+                    <div className={`${isFriday ? 'bg-emerald-700' : 'bg-blue-700'} p-5 text-white`}>
+                        <h1 className="text-xl font-bold text-center mb-4">حصاد العبادات العائلي (مباشر)</h1>
+                        {loading && <p className="text-center text-xs animate-pulse mb-2">جاري المزامنة...</p>}
+                        <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full text-slate-900 p-2 rounded font-bold" />
                     </div>
 
-                    {/* نصيحة اليوم */}
-                    <div className="m-4 p-4 bg-amber-50 border-r-4 border-amber-500 rounded-sm">
-                        <p className="text-sm text-amber-900 font-medium">💡 {todayTip}</p>
-                    </div>
-
-                    {/* جدول العبادات */}
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto flex-grow px-2">
                         <table className="w-full text-right">
-                            <thead className="bg-slate-100">
-                                <tr>
-                                    <th className="p-3 text-xs text-slate-500">العبادة</th>
-                                    {users.map(u => <th key={u} className="p-1 text-center text-[10px] text-slate-400 font-bold">{u}</th>)}
+                            <thead>
+                                <tr className="border-b text-[10px] text-slate-400">
+                                    <th className="p-3">العبادة</th>
+                                    {users.map(u => <th key={u} className="text-center">{u}</th>)}
                                 </tr>
                             </thead>
                             <tbody>
-                                {tasks.map((t, i) => (
-                                    <tr key={t} className={`border-b border-slate-50 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                        <td className={`p-3 text-sm font-medium ${t.includes('الكهف') ? 'text-emerald-600' : 'text-slate-700'}`}>{t}</td>
+                                {tasks.map(t => (
+                                    <tr key={t} className="border-b border-slate-50">
+                                        <td className="p-2 text-xs font-bold text-slate-600">{t}</td>
                                         {users.map(u => (
-                                            <td key={u} className="text-center p-1">
-                                                <button onClick={() => toggle(u, t)} className="text-2xl hover:scale-110 transition-transform">
+                                            <td key={u} className="text-center">
+                                                <button onClick={() => toggle(u, t)} className="text-2xl p-1">
                                                     {data[selectedDate]?.[u]?.[t] ? '✅' : '⚪'}
                                                 </button>
                                             </td>
@@ -128,30 +107,14 @@
                         </table>
                     </div>
 
-                    {/* لوحة الصدارة (Leaderboard) */}
-                    <div className="m-4 mt-8 bg-slate-100 p-4 rounded-2xl">
-                        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">🏆 ترتيب الإنجاز اليومي</h2>
-                        <div className="space-y-2">
-                            {scores.map((s, idx) => (
-                                <div key={s.name} className={`flex justify-between items-center p-3 rounded-lg ${idx === 0 && s.count > 0 ? 'bg-emerald-100 border border-emerald-200' : 'bg-white'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <span className="font-bold text-slate-400">#{idx + 1}</span>
-                                        <span className="font-bold">{s.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm bg-slate-200 px-2 py-0.5 rounded text-slate-600">{s.count}</span>
-                                        {idx === 0 && s.count > 0 && <span className="text-xs font-bold text-emerald-600 animate-pulse">نجم اليوم ⭐</span>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {scores[0].count > 0 && (
-                            <div className="mt-4 p-3 bg-white rounded-lg border-2 border-dashed border-emerald-300 text-center">
-                                <p className="text-emerald-700 font-bold text-sm italic">
-                                    "أحسنت يا {scores[0].name}، أنت قدوة لنا اليوم! استمر 🚀"
-                                </p>
+                    <div className="m-4 p-4 bg-slate-100 rounded-2xl">
+                        <h2 className="text-lg font-bold mb-4">🏆 الترتيب المباشر</h2>
+                        {scores.map((s, idx) => (
+                            <div key={s.name} className="flex justify-between p-2 border-b">
+                                <span>{idx+1}. {s.name}</span>
+                                <span className="font-bold">{s.count} ✅</span>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
             );
