@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسرتي على الطاعة - محمد ياسين</title>
+    <title>أسرتي على الطاعة - تصميم محمد ياسين</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Changa:wght@400;700&display=swap');
-        body { font-family: 'Changa', sans-serif; background: #e0e5ec; padding: 15px; }
+        body { font-family: 'Changa', sans-serif; background: #e0e5ec; padding: 10px; }
         
-        /* تصميم نيومورفيزم فائق البروز (Extreme 3D) */
-        .neu-flat { background: #e0e5ec; box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff; border-radius: 25px; }
-        .neu-inset { background: #e0e5ec; box-shadow: inset 7px 7px 14px #bebebe, inset -7px -7px 14px #ffffff; border-radius: 15px; }
-        .neu-btn { background: #e0e5ec; box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff; transition: 0.2s ease; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .neu-btn:active { box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff; transform: scale(0.95); }
+        /* تصميم مجسم فائق البروز (3D Ultra) */
+        .neu-flat { background: #e0e5ec; box-shadow: 10px 10px 20px #a3b1c6, -10px -10px 20px #ffffff; border-radius: 20px; border: 1px solid rgba(255,255,255,0.4); }
+        .neu-inset { background: #e0e5ec; box-shadow: inset 8px 8px 16px #a3b1c6, inset -8px -8px 16px #ffffff; border-radius: 15px; }
+        .neu-btn { background: #e0e5ec; box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff; transition: 0.2s ease; border-radius: 10px; }
+        .neu-btn:active { box-shadow: inset 3px 3px 6px #a3b1c6, inset -3px -3px 6px #ffffff; transform: scale(0.95); }
         
-        select { background: transparent; border: none; outline: none; width: 100%; font-weight: bold; text-align: center; appearance: none; cursor: pointer; color: #334155; }
-        .status-mosque { background: #dcfce7; color: #166534; box-shadow: inset 2px 2px 5px #bbf7d0; }
-        .status-qada { background: #fef9c3; color: #854d0e; }
-        .check-active { color: #059669; text-shadow: 0 0 8px rgba(5,150,105,0.5); font-weight: bold; }
+        select { background: transparent; border: none; outline: none; width: 100%; font-weight: bold; text-align: center; color: #1e293b; appearance: none; -webkit-appearance: none; cursor: pointer; }
+        .check-icon { font-size: 20px; color: #059669; text-shadow: 0 0 10px rgba(5, 150, 105, 0.4); }
     </style>
 </head>
 <body>
@@ -29,44 +27,43 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // قناة مزامنة عامة ومباشرة
-        const API_URL = "https://api.jsonbin.io/v3/b/65ae36f1dc74654018979607";
-        const MASTER_KEY = "$2b$10$X8A2V7p6lU6LhF3X3.J3AeX0yG7L2fP5C2uR7O5G8o7U6i5Y4z5C";
+        // قناة مزامنة عامة (مستودع بيانات سحابي)
+        const SYNC_KEY = "family_sync_yasin_2024";
+        const API = `https://kvdb.io/4y9UvN8U8U8U8U8U8U8U8U/${SYNC_KEY}`;
 
         function App() {
             const users = ['محمد', 'شيماء', 'أحمد', 'ياسين'];
             const men = ['محمد', 'أحمد', 'ياسين'];
             const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
             const [data, setData] = useState({});
-            const [loading, setLoading] = useState(false);
+            const [syncing, setSyncing] = useState(false);
 
-            // جلب البيانات (المزامنة اللحظية)
-            const sync = async () => {
+            // وظيفة جلب البيانات من السحاب
+            const fetchCloud = async () => {
+                setSyncing(true);
                 try {
-                    const res = await fetch(`${API_URL}/latest`, { headers: { "X-Master-Key": MASTER_KEY } });
-                    const json = await res.json();
-                    if (json.record) setData(json.record);
-                } catch (e) { console.log("اتصال غير مستقر"); }
+                    const r = await fetch(API);
+                    if (r.ok) {
+                        const d = await r.json();
+                        setData(d);
+                    }
+                } catch (e) { console.log("جاري إنشاء قاعدة بيانات أولى..."); }
+                setTimeout(() => setSyncing(false), 800);
             };
 
-            // رفع البيانات فوراً
-            const save = async (newData) => {
-                setData(newData);
-                setLoading(true);
+            // وظيفة حفظ البيانات للسحاب
+            const saveCloud = async (updated) => {
+                setSyncing(true);
                 try {
-                    await fetch(API_URL, {
-                        method: 'PUT',
-                        headers: { "Content-Type": "application/json", "X-Master-Key": MASTER_KEY },
-                        body: JSON.stringify(newData)
-                    });
-                } catch (e) { console.log("خطأ في الرفع"); }
-                setLoading(false);
+                    await fetch(API, { method: 'POST', body: JSON.stringify(updated) });
+                } catch (e) { console.error("فشل المزامنة"); }
+                setTimeout(() => setSyncing(false), 800);
             };
 
-            useEffect(() => {
-                sync();
-                const interval = setInterval(sync, 7000); // تحديث آلي كل 7 ثوانٍ
-                return () => clearInterval(interval);
+            useEffect(() => { 
+                fetchCloud(); 
+                const itv = setInterval(fetchCloud, 10000); // تحديث تلقائي كل 10 ثوان
+                return () => clearInterval(itv);
             }, []);
 
             const isFriday = new Date(date).getDay() === 5;
@@ -75,7 +72,8 @@
 
             const toggle = (u, t, val) => {
                 const newData = { ...data, [date]: { ...data[date], [u]: { ...data[date]?.[u], [t]: val } } };
-                save(newData);
+                setData(newData);
+                saveCloud(newData);
             };
 
             const scores = users.map(u => ({
@@ -84,56 +82,53 @@
             })).sort((a,b) => b.count - a.count);
 
             return (
-                <div className="max-w-md mx-auto space-y-6 pb-10">
-                    <header className="neu-flat p-6 text-center border-b-4 border-blue-500">
+                <div className="max-w-md mx-auto flex flex-col gap-6 pb-12">
+                    {/* رأس التطبيق - تصميم بارز */}
+                    <header className="neu-flat p-6 text-center">
                         <div className="flex justify-between items-center mb-4">
-                            <span className={`text-[10px] px-2 py-1 rounded-full ${loading ? 'bg-orange-100 text-orange-600 animate-pulse' : 'bg-green-100 text-green-600'}`}>
-                                {loading ? 'جاري الحفظ...' : 'متصل بالسحابة ✓'}
-                            </span>
-                            <h1 className="text-xl font-bold text-slate-700 leading-tight">🏠 أسرتي على الطاعة</h1>
+                            <button onClick={fetchCloud} className={`neu-btn px-3 py-1 text-[10px] font-bold ${syncing ? 'text-orange-500 animate-spin' : 'text-blue-500'}`}>
+                                {syncing ? '⏳' : '↻ تحديث'}
+                            </button>
+                            <h1 className="text-xl font-bold text-slate-700">🏠 أسرتي على الطاعة</h1>
                         </div>
                         <div className="neu-inset p-2">
                             <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full text-center font-bold bg-transparent outline-none text-slate-600"/>
                         </div>
                     </header>
 
-                    <div className="neu-flat p-4 mx-1">
+                    {/* جدول العبادات */}
+                    <div className="neu-flat overflow-hidden p-2">
                         <table className="w-full text-right border-separate border-spacing-y-2">
-                            <thead>
-                                <tr className="text-[10px] text-slate-400 uppercase tracking-tighter">
-                                    <th className="pr-2">العبادة</th>
+                            <thead className="text-[10px] text-slate-400 font-bold uppercase">
+                                <tr>
+                                    <th className="p-2">العبادة</th>
                                     {users.map(u => <th key={u} className="text-center">{u}</th>)}
                                 </tr>
                             </thead>
                             <tbody>
                                 {prayers.map(p => (
                                     <tr key={p}>
-                                        <td className="p-2 text-xs font-bold text-slate-700">{p}</td>
-                                        {users.map(u => {
-                                            const val = data[date]?.[u]?.[p] || "";
-                                            return (
-                                                <td key={u} className="p-1">
-                                                    <div className={`neu-inset p-1 ${val==='مسجد'?'status-mosque':val==='قضاء'?'status-qada':''}`}>
-                                                        <select value={val} onChange={e => toggle(u, p, e.target.value)}>
-                                                            <option value="">--</option>
-                                                            {men.includes(u) ? <><option value="مسجد">مسجد</option><option value="فرداً">فرداً</option></> : <option value="حاضر">حاضر</option>}
-                                                            <option value="قضاء">قضاء</option>
-                                                        </select>
-                                                    </div>
-                                                </td>
-                                            );
-                                        })}
+                                        <td className="p-3 text-xs font-bold text-slate-600">{p}</td>
+                                        {users.map(u => (
+                                            <td key={u} className="p-1">
+                                                <div className="neu-inset p-1">
+                                                    <select value={data[date]?.[u]?.[p] || ""} onChange={e => toggle(u, p, e.target.value)}>
+                                                        <option value="">--</option>
+                                                        {men.includes(u) ? <><option value="مسجد">🏠 مس</option><option value="فرد">👤 فر</option></> : <option value="حاضر">✨ حا</option>}
+                                                        <option value="قضاء">⏳ قض</option>
+                                                    </select>
+                                                </div>
+                                            </td>
+                                        ))}
                                     </tr>
                                 ))}
                                 {others.map(t => (
                                     <tr key={t}>
-                                        <td className="p-2 text-[11px] text-slate-500 font-medium">{t}</td>
+                                        <td className="p-3 text-[11px] text-slate-500 font-bold italic">{t}</td>
                                         {users.map(u => (
-                                            <td key={u} className="p-1 text-center">
-                                                <button onClick={() => toggle(u, t, !data[date]?.[u]?.[t])} className="w-10 h-10 neu-btn mx-auto text-xl">
-                                                    <span className={data[date]?.[u]?.[t] ? "check-active" : "text-slate-300"}>
-                                                        {data[date]?.[u]?.[t] ? "✓" : "○"}
-                                                    </span>
+                                            <td key={u} className="p-1">
+                                                <button onClick={() => toggle(u, t, !data[date]?.[u]?.[t])} className="w-10 h-10 neu-btn mx-auto flex items-center justify-center">
+                                                    <span className="check-icon">{data[date]?.[u]?.[t] ? "✓" : ""}</span>
                                                 </button>
                                             </td>
                                         ))}
@@ -143,20 +138,26 @@
                         </table>
                     </div>
 
-                    <div className="neu-flat p-6 mx-1">
-                        <h2 className="text-center font-bold text-slate-700 mb-6 border-b pb-2 flex items-center justify-center gap-2">🏆 لوحة الإنجاز</h2>
+                    {/* لوحة الشرف */}
+                    <div className="neu-flat p-6">
+                        <h2 className="text-center font-bold text-slate-700 mb-6 text-lg border-b-2 border-white/50 pb-2">🏆 لوحة الشرف</h2>
                         <div className="space-y-4">
                             {scores.map((s, i) => (
-                                <div key={s.name} className={`flex items-center justify-between p-4 ${i===0 ? 'neu-inset bg-blue-50/50' : 'neu-flat'}`}>
-                                    <span className="font-bold text-slate-700">{i+1}. {s.name}</span>
-                                    <span className="neu-btn px-4 py-1 text-xs font-bold text-blue-600">{s.count} هدف</span>
+                                <div key={s.name} className={`flex items-center justify-between p-4 ${i===0 ? 'neu-inset' : 'neu-btn'}`}>
+                                    <span className="font-bold">{i+1}. {s.name}</span>
+                                    <span className="neu-flat px-4 py-1 text-xs font-bold text-blue-600">{s.count}</span>
                                 </div>
                             ))}
                         </div>
+                        {scores[0].count > 0 && (
+                            <div className="mt-8 p-4 neu-flat bg-emerald-600 text-white text-center">
+                                <p className="text-xs font-bold animate-pulse italic">🌟 {scores[0].name}.. أنت فخرنا اليوم 🌟</p>
+                            </div>
+                        )}
                     </div>
 
-                    <footer className="p-10 text-center">
-                        <div className="inline-block px-10 py-4 neu-flat font-bold text-slate-600 text-sm border-2 border-white/50">
+                    <footer className="py-10 text-center">
+                        <div className="inline-block px-12 py-4 neu-flat font-bold text-slate-500 text-xs shadow-lg ring-4 ring-white/20">
                             تصميم محمد ياسين
                         </div>
                     </footer>
