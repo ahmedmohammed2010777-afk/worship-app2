@@ -3,65 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق العبادات - تصميم محمد ياسين</title>
+    <title>أسرتي على الطاعة</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        select {
-            background-color: #f1f5f9;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 11px;
-            padding: 4px;
-            width: 85px;
-            cursor: pointer;
-            outline: none;
-        }
-        select:focus { border-color: #3b82f6; }
-        .prayer-row { background-color: #f8fafc; }
-        .status-mosque { color: #059669; font-weight: bold; }
-        .status-present { color: #2563eb; font-weight: bold; }
-        .status-qada { color: #d97706; font-weight: bold; }
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Changa:wght@300;500;700&display=swap');
+        body { font-family: 'Changa', sans-serif; }
+        .hadith-font { font-family: 'Amiri', serif; }
+        select { background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; padding: 3px; width: 90%; outline: none; transition: all 0.2s; }
+        select.active { background-color: #dcfce7; border-color: #22c55e; }
+        .prayer-row { background-color: #fdfdfd; }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100">
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        const AHADITH = [
+            "قال ﷺ: 'أحبُّ الأعمالِ إلى اللهِ أدومُها وإن قلَّ'.",
+            "قال ﷺ: 'مَن سلكَ طريقًا يبتغي فيهِ علمًا سهَّلَ اللهُ لهُ طريقًا إلى الجنَّةِ'.",
+            "قال ﷺ: 'الدَّالُّ على الخيرِ كفاعلِهِ'.",
+            "قال ﷺ: 'كلمتانِ خفيفتانِ على اللِّسانِ ثقيلتانِ في الميزانِ: سبحان الله وبحمده سبحان الله العظيم'.",
+            "قال ﷺ: 'مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللهُ عَلَيْهِ بِهَا عَشْرًا'.",
+            "قال ﷺ: 'الصَّلَواتُ الخَمْسُ، والجمُعةُ إلى الجُمُعةِ.. مُكفِّراتٌ لِما بينَهُنَّ'.",
+            "قال ﷺ: 'مَنْ قَرَأَ حَرْفًا مِنْ كِتَابِ اللَّهِ فَلَهُ بِهِ حَسَنَةٌ'.",
+            "قال ﷺ: 'إِنَّ اللَّهَ يُحِبُّ إِذَا عَمِلَ أَحَدُكُمْ عَمَلًا أَنْ يُتْقِنَهُ'."
+        ];
+
         function App() {
             const users = ['محمد', 'شيماء', 'أحمد', 'ياسين'];
             const men = ['محمد', 'أحمد', 'ياسين'];
-            
             const getToday = () => new Date().toISOString().split('T')[0];
             const [date, setDate] = useState(getToday());
-            const [data, setData] = useState(() => JSON.parse(localStorage.getItem('worship_v5') || '{}'));
+            const [data, setData] = useState(() => JSON.parse(localStorage.getItem('family_v6_db') || '{}'));
 
             useEffect(() => {
-                localStorage.setItem('worship_v5', JSON.stringify(data));
+                localStorage.setItem('family_v6_db', JSON.stringify(data));
             }, [data]);
 
             const isFriday = new Date(date).getDay() === 5;
-            
-            // الفروض الخمسة
-            const prayers = [
-                "صلاة الفجر", 
-                isFriday ? "صلاة الجمعة" : "صلاة الظهر", 
-                "صلاة العصر", 
-                "صلاة المغرب", 
-                "صلاة العشاء"
-            ];
+            const prayers = ["صلاة الفجر", isFriday ? "صلاة الجمعة" : "صلاة الظهر", "صلاة العصر", "صلاة المغرب", "صلاة العشاء"];
+            const others = ["سنة الفجر", "أذكار الصباح", "الضحى", "سورة الكهف", "٤ قبل الظهر", "٢ بعد الظهر", "أذكار المساء", "٢ بعد المغرب", "٢ بعد العشاء", "سورة الملك", "الشفع والوتر", "القيام", "الورد", "أذكار النوم"]
+                            .filter(i => isFriday || i !== "سورة الكهف");
 
-            // باقي النوافل والأذكار
-            const others = [
-                "سنة الفجر", "أذكار الصباح", "الضحى", "سورة الكهف", "٤ قبل الظهر", 
-                "٢ بعد الظهر", "أذكار المساء", "٢ بعد المغرب", "٢ بعد العشاء", 
-                "سورة الملك", "الشفع والوتر", "القيام", "الورد", "أذكار النوم"
-            ].filter(i => isFriday || i !== "سورة الكهف");
-
-            const handleUpdate = (u, t, val) => {
+            const updateValue = (u, t, val) => {
                 const newData = { ...data };
                 if (!newData[date]) newData[date] = {};
                 if (!newData[date][u]) newData[date][u] = {};
@@ -69,56 +57,67 @@
                 setData(newData);
             };
 
+            const calculateScores = () => {
+                return users.map(u => {
+                    const tasks = data[date]?.[u] || {};
+                    let score = Object.values(tasks).filter(v => v === true || (typeof v === 'string' && v !== "")).length;
+                    return { name: u, score };
+                }).sort((a, b) => b.score - a.score);
+            };
+
+            const scores = calculateScores();
+            const topScorer = scores[0];
+            const dailyHadith = AHADITH[new Date(date).getDate() % AHADITH.length];
+
             return (
-                <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl flex flex-col border-x border-gray-200">
-                    <header className="bg-blue-800 p-6 text-white text-center shadow-md">
-                        <h1 className="text-xl font-bold">متابعة العبادات العائلية</h1>
+                <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl border-x flex flex-col">
+                    <header className="bg-emerald-700 p-6 text-white text-center shadow-lg rounded-b-3xl">
+                        <h1 className="text-2xl font-bold tracking-wide">🏠 أسرتي على الطاعة</h1>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} 
-                               className="mt-4 w-full p-2 text-black rounded font-bold border-none" />
+                               className="mt-4 w-full p-2 text-emerald-900 rounded-xl font-bold text-center outline-none" />
                     </header>
 
-                    <div className="flex-grow overflow-auto">
+                    {/* حديث اليوم */}
+                    <div className="m-4 p-4 bg-amber-50 border-r-4 border-amber-400 rounded-lg shadow-sm">
+                        <h3 className="text-amber-800 text-xs font-bold mb-1">✨ حديث اليوم:</h3>
+                        <p className="hadith-font text-sm leading-relaxed text-gray-800">{dailyHadith}</p>
+                    </div>
+
+                    <div className="flex-grow">
                         <table className="w-full text-right">
                             <thead>
-                                <tr className="bg-gray-50 text-[10px] text-gray-400 border-b">
+                                <tr className="bg-gray-100 text-[10px] text-gray-500 uppercase">
                                     <th className="p-3">العبادة</th>
                                     {users.map(u => <th key={u} className="text-center">{u}</th>)}
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* قسم الفروض بلقوائم المنسدلة */}
                                 {prayers.map(p => (
-                                    <tr key={p} className="prayer-row border-b">
-                                        <td className="p-3 text-sm font-bold text-blue-900">{p}</td>
+                                    <tr key={p} className="border-b prayer-row">
+                                        <td className="p-3 text-sm font-bold text-emerald-800">{p}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
-                                                <select 
-                                                    value={data[date]?.[u]?.[p] || ""} 
-                                                    onChange={(e) => handleUpdate(u, p, e.target.value)}
-                                                >
+                                                <select value={data[date]?.[u]?.[p] || ""} 
+                                                        className={data[date]?.[u]?.[p] ? "active" : ""}
+                                                        onChange={(e) => updateValue(u, p, e.target.value)}>
                                                     <option value="">--</option>
                                                     {men.includes(u) ? (
-                                                        <>
-                                                            <option value="مسجد">🏠 مسجد</option>
-                                                            <option value="فرداً">👤 فرداً</option>
-                                                        </>
+                                                        <><option value="مسجد">مسجد</option><option value="فرداً">فرداً</option></>
                                                     ) : (
-                                                        <option value="حاضر">✨ حاضر</option>
+                                                        <option value="حاضر">حاضر</option>
                                                     )}
-                                                    <option value="قضاء">⏳ قضاء</option>
+                                                    <option value="قضاء">قضاء</option>
                                                 </select>
                                             </td>
                                         ))}
                                     </tr>
                                 ))}
-
-                                {/* قسم النوافل بنظام الصح */}
                                 {others.map(t => (
-                                    <tr key={t} className="border-b hover:bg-gray-50">
+                                    <tr key={t} className="border-b hover:bg-emerald-50/30">
                                         <td className="p-3 text-xs text-gray-600">{t}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
-                                                <button onClick={() => handleUpdate(u, t, !data[date]?.[u]?.[t])} className="text-2xl">
+                                                <button onClick={() => updateValue(u, t, !data[date]?.[u]?.[t])} className="text-2xl">
                                                     {data[date]?.[u]?.[t] ? "✅" : "⚪"}
                                                 </button>
                                             </td>
@@ -129,9 +128,30 @@
                         </table>
                     </div>
 
-                    <footer className="bg-gray-100 p-8 text-center border-t mt-auto">
-                        <p className="text-xs text-gray-400 mb-4 italic">تُحفظ البيانات تلقائياً على هذا الجهاز</p>
-                        <div className="inline-block px-6 py-2 bg-white border-2 border-blue-800 rounded-full shadow-md font-bold text-blue-900">
+                    {/* لوحة الشرف */}
+                    <div className="m-4 p-4 bg-gray-50 rounded-2xl border-2 border-emerald-100 shadow-inner">
+                        <h2 className="text-center font-bold text-emerald-800 mb-3 flex items-center justify-center gap-2">
+                            🏆 لوحة شرف اليوم
+                        </h2>
+                        <div className="grid grid-cols-2 gap-2">
+                            {scores.map((s, idx) => (
+                                <div key={s.name} className={`p-2 rounded-lg flex justify-between items-center ${idx === 0 ? 'bg-yellow-100 border border-yellow-300' : 'bg-white border border-gray-100'}`}>
+                                    <span className="text-xs font-bold">{idx + 1}. {s.name}</span>
+                                    <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full">{s.score}</span>
+                                </div>
+                            ))}
+                        </div>
+                        {topScorer.score > 0 && (
+                            <div className="mt-3 text-center p-2 bg-emerald-600 rounded-xl animate-pulse">
+                                <p className="text-white text-xs font-bold italic">
+                                    "هنيئاً لك يا {topScorer.name}.. أنت اليوم شمس الأسرة المنيرة! 🌟"
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <footer className="p-6 text-center">
+                        <div className="inline-block px-8 py-2 bg-emerald-800 text-white rounded-full shadow-lg font-bold text-xs uppercase tracking-widest">
                             تصميم محمد ياسين
                         </div>
                     </footer>
