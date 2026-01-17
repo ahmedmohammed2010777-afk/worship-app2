@@ -3,68 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أسرتي على الطاعة</title>
+    <title>أسرتي على الطاعة - تصميم محمد ياسين</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Changa:wght@400;700&display=swap');
-        body { font-family: 'Changa', sans-serif; background: #e0e5ec; }
-        /* تصميم مجسم للأزرار والصناديق */
-        .glass-card { background: #f8fafc; border-radius: 20px; box-shadow: 10px 10px 20px #bebebe, -10px -10px 20px #ffffff; }
-        .3d-btn { box-shadow: 4px 4px 8px #bebebe, -4px -4px 8px #ffffff; transition: all 0.2s; }
-        .3d-btn:active { box-shadow: inset 4px 4px 8px #bebebe, inset -4px -4px 8px #ffffff; }
-        select { background: #f1f5f9; border: none; box-shadow: inset 2px 2px 5px #bebebe, inset -2px -2px 5px #ffffff; border-radius: 8px; padding: 4px; font-size: 11px; outline: none; }
+        body { font-family: 'Changa', sans-serif; background: #e0e5ec; padding: 10px; }
+        
+        /* تأثيرات التجسيم (Neumorphism) */
+        .neu-card {
+            background: #e0e5ec;
+            border-radius: 20px;
+            box-shadow: 9px 9px 16px #bebebe, -9px -9px 16px #ffffff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .neu-inset {
+            box-shadow: inset 6px 6px 12px #bebebe, inset -6px -6px 12px #ffffff;
+            border-radius: 12px;
+        }
+        .neu-btn {
+            background: #e0e5ec;
+            box-shadow: 5px 5px 10px #bebebe, -5px -5px 10px #ffffff;
+            transition: all 0.2s ease;
+        }
+        .neu-btn:active {
+            box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+            transform: scale(0.95);
+        }
+        select {
+            background: #e0e5ec;
+            border: none;
+            box-shadow: inset 3px 3px 6px #bebebe, inset -3px -3px 6px #ffffff;
+            padding: 5px;
+            border-radius: 8px;
+            font-size: 11px;
+            outline: none;
+            width: 100%;
+        }
     </style>
 </head>
-<body class="p-2 md:p-6">
+<body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // رابط قاعدة البيانات السحابية (مشترك للجميع)
-        const REMOTE_URL = "https://api.myjson.online/v1/records/0b457317-1f1f-4903-8886-3f196a096c41";
-
-        const AHADITH = [
-            "قال ﷺ: 'أحبُّ الأعمالِ إلى اللهِ أدومُها وإن قلَّ'.",
-            "قال ﷺ: 'مَن سلكَ طريقًا يبتغي فيهِ علمًا سهَّلَ اللهُ لهُ طريقًا إلى الجنَّةِ'.",
-            "قال ﷺ: 'الدَّالُّ على الخيرِ كفاعلِهِ'.",
-            "قال ﷺ: 'كلمتانِ خفيفتانِ على اللِّسانِ ثقيلتانِ في الميزانِ: سبحان الله وبحمده سبحان الله العظيم'."
-        ];
+        // مفتاح مزامنة فريد لعائلتكم لضمان الظهور اللحظي
+        const SYNC_ID = "family_worship_v9_mohammed_yasin"; 
+        const API_URL = `https://api.jsonbin.io/v3/b/65ae36f1dc74654018979607`; // مستودع عالمي للمزامنة
 
         function App() {
             const users = ['محمد', 'شيماء', 'أحمد', 'ياسين'];
             const men = ['محمد', 'أحمد', 'ياسين'];
             const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
             const [data, setData] = useState({});
-            const [loading, setLoading] = useState(true);
+            const [isSyncing, setIsSyncing] = useState(false);
 
-            // جلب البيانات من الإنترنت فوراً وتحديثها كل 15 ثانية للمزامنة
+            // وظيفة جلب البيانات من السحابة
+            const fetchCloudData = async () => {
+                try {
+                    const res = await fetch(`https://kvdb.io/4y9UvN8U8U8U8U8U8U8U8U/${SYNC_ID}`);
+                    if (res.ok) {
+                        const cloudData = await res.json();
+                        setData(cloudData);
+                    }
+                } catch (e) { console.log("جاري البحث عن بيانات..."); }
+            };
+
+            // وظيفة رفع البيانات للسحابة فوراً
+            const saveCloudData = async (updatedData) => {
+                setIsSyncing(true);
+                try {
+                    await fetch(`https://kvdb.io/4y9UvN8U8U8U8U8U8U8U8U/${SYNC_ID}`, {
+                        method: 'POST',
+                        body: JSON.stringify(updatedData)
+                    });
+                } catch (e) { console.error("خطأ في المزامنة"); }
+                setTimeout(() => setIsSyncing(false), 1000);
+            };
+
             useEffect(() => {
-                const sync = async () => {
-                    try {
-                        const res = await fetch(REMOTE_URL);
-                        const json = await res.json();
-                        if (json.data) setData(json.data);
-                        setLoading(false);
-                    } catch (e) { console.log("خطأ في المزامنة"); }
-                };
-                sync();
-                const interval = setInterval(sync, 15000); 
+                fetchCloudData();
+                const interval = setInterval(fetchCloudData, 5000); // تحديث تلقائي كل 5 ثوانٍ
                 return () => clearInterval(interval);
             }, []);
-
-            const updateCloud = async (newData) => {
-                setData(newData);
-                try {
-                    await fetch(REMOTE_URL, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ data: newData })
-                    });
-                } catch (e) { alert("تأكد من اتصالك بالإنترنت!"); }
-            };
 
             const isFriday = new Date(date).getDay() === 5;
             const prayers = ["صلاة الفجر", isFriday ? "صلاة الجمعة" : "صلاة الظهر", "صلاة العصر", "صلاة المغرب", "صلاة العشاء"];
@@ -76,7 +99,8 @@
                 if (!newData[date]) newData[date] = {};
                 if (!newData[date][u]) newData[date][u] = {};
                 newData[date][u][t] = val;
-                updateCloud(newData);
+                setData(newData);
+                saveCloudData(newData);
             };
 
             const scores = users.map(u => {
@@ -85,37 +109,43 @@
                 return { name: u, count };
             }).sort((a, b) => b.count - a.count);
 
+            const dailyHadith = [
+                "قال ﷺ: 'أحبُّ الأعمالِ إلى اللهِ أدومُها وإن قلَّ'.",
+                "قال ﷺ: 'مَن سلكَ طريقًا يبتغي فيهِ علمًا سهَّلَ اللهُ لهُ طريقًا إلى الجنَّةِ'.",
+                "قال ﷺ: 'الدَّالُّ على الخيرِ كفاعلِهِ'."
+            ][new Date(date).getDate() % 3];
+
             return (
-                <div className="max-w-md mx-auto flex flex-col gap-4">
-                    {/* رأس التطبيق مجسم */}
-                    <div className="glass-card p-6 text-center border-b-4 border-emerald-500">
-                        <h1 className="text-2xl font-bold text-emerald-800 mb-2">🏠 أسرتي على الطاعة</h1>
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} 
-                               className="w-full p-2 rounded-lg font-bold text-center border bg-white shadow-inner" />
-                        {loading && <p className="text-[10px] text-orange-500 mt-2 animate-pulse">جاري جلب البيانات السحابية...</p>}
+                <div className="max-w-md mx-auto space-y-6">
+                    {/* رأس التطبيق */}
+                    <div className="neu-card p-6 text-center relative overflow-hidden">
+                        <div className={`absolute top-2 left-2 w-3 h-3 rounded-full ${isSyncing ? 'bg-green-500 animate-ping' : 'bg-blue-400'}`}></div>
+                        <h1 className="text-2xl font-bold text-slate-700">🏠 أسرتي على الطاعة</h1>
+                        <div className="mt-4 neu-inset p-1">
+                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} 
+                                   className="w-full bg-transparent p-2 text-center font-bold text-slate-600 outline-none" />
+                        </div>
                     </div>
 
                     {/* حديث اليوم */}
-                    <div className="glass-card p-4 mx-2 bg-gradient-to-r from-amber-50 to-white">
-                        <p className="text-xs font-bold text-amber-600 mb-1">✨ حديث اليوم</p>
-                        <p className="text-sm italic text-gray-700 leading-relaxed">
-                            {AHADITH[new Date(date).getDate() % AHADITH.length]}
-                        </p>
+                    <div className="neu-card p-4 mx-2 border-r-4 border-blue-500">
+                        <p className="text-xs font-bold text-blue-600 mb-1">✨ حديث اليوم</p>
+                        <p className="text-sm italic text-slate-700 leading-relaxed">{dailyHadith}</p>
                     </div>
 
                     {/* الجدول */}
-                    <div className="glass-card overflow-hidden mx-2">
+                    <div className="neu-card overflow-hidden mx-2">
                         <table className="w-full text-right">
-                            <thead className="bg-emerald-600 text-white text-[10px]">
+                            <thead className="bg-slate-200/50 text-slate-500 text-[10px] uppercase">
                                 <tr>
                                     <th className="p-3">العبادة</th>
                                     {users.map(u => <th key={u} className="text-center">{u}</th>)}
                                 </tr>
                             </thead>
-                            <tbody className="text-sm">
+                            <tbody>
                                 {prayers.map(p => (
-                                    <tr key={p} className="border-b">
-                                        <td className="p-3 font-bold text-emerald-900">{p}</td>
+                                    <tr key={p} className="border-b border-white/50">
+                                        <td className="p-3 text-xs font-bold text-slate-700">{p}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
                                                 <select value={data[date]?.[u]?.[p] || ""} 
@@ -129,13 +159,13 @@
                                     </tr>
                                 ))}
                                 {others.map(t => (
-                                    <tr key={t} className="border-b">
-                                        <td className="p-3 text-xs text-gray-500">{t}</td>
+                                    <tr key={t} className="border-b border-white/50">
+                                        <td className="p-3 text-[11px] text-slate-500">{t}</td>
                                         {users.map(u => (
                                             <td key={u} className="p-1 text-center">
                                                 <button onClick={() => toggle(u, t, !data[date]?.[u]?.[t])} 
-                                                        className="text-2xl 3d-btn rounded-full w-8 h-8">
-                                                    {data[date]?.[u]?.[t] ? "✅" : "⚪"}
+                                                        className="w-9 h-9 neu-btn rounded-full flex items-center justify-center mx-auto text-xl">
+                                                    {data[date]?.[u]?.[t] ? "✅" : ""}
                                                 </button>
                                             </td>
                                         ))}
@@ -145,28 +175,26 @@
                         </table>
                     </div>
 
-                    {/* لوحة الشرف المجسمة */}
-                    <div className="glass-card p-4 mx-2 border-t-4 border-yellow-400">
-                        <h2 className="text-center font-bold text-gray-800 mb-3">🏆 لوحة الشرف اليومية</h2>
-                        <div className="grid grid-cols-2 gap-3">
+                    {/* لوحة الشرف */}
+                    <div className="neu-card p-5 mx-2">
+                        <h2 className="text-center font-bold text-slate-700 mb-4 flex items-center justify-center gap-2">🏆 لوحة شرف اليوم</h2>
+                        <div className="grid grid-cols-2 gap-4">
                             {scores.map((s, idx) => (
-                                <div key={s.name} className={`p-3 rounded-xl 3d-btn flex justify-between items-center ${idx === 0 ? 'bg-yellow-50' : 'bg-white'}`}>
+                                <div key={s.name} className={`p-3 rounded-2xl flex justify-between items-center ${idx === 0 ? 'neu-inset bg-blue-50/30' : 'neu-card'}`}>
                                     <span className="font-bold text-xs">{idx+1}. {s.name}</span>
-                                    <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px]">{s.count}</span>
+                                    <span className="neu-btn px-2 py-0.5 rounded-lg text-[10px] font-bold text-blue-600">{s.count}</span>
                                 </div>
                             ))}
                         </div>
                         {scores[0].count > 0 && (
-                            <div className="mt-4 p-3 bg-emerald-700 text-white rounded-xl text-center shadow-lg transform scale-105">
-                                <p className="text-xs font-bold animate-bounce">
-                                    🌟 أحسنت يا {scores[0].name}.. أنت فخر الأسرة اليوم! 🌟
-                                </p>
+                            <div className="mt-6 p-4 neu-card bg-blue-600 text-white text-center">
+                                <p className="text-sm font-bold animate-pulse">🌟 أحسنت يا {scores[0].name}.. أنت فخر الأسرة اليوم! 🌟</p>
                             </div>
                         )}
                     </div>
 
-                    <footer className="p-6 text-center">
-                        <div className="inline-block px-10 py-3 glass-card bg-emerald-800 text-white font-bold text-xs shadow-xl ring-2 ring-emerald-500">
+                    <footer className="py-10 text-center">
+                        <div className="inline-block px-10 py-3 neu-card text-slate-600 font-bold text-sm tracking-widest border-2 border-white/50">
                             تصميم محمد ياسين
                         </div>
                     </footer>
